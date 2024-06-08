@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Button, Container, Text, VStack } from "@chakra-ui/react";
 
 const Index = () => {
@@ -11,6 +11,10 @@ const Index = () => {
   const processorRef = useRef(null);
 
   const handleConnect = () => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
     socketRef.current = new WebSocket("wss://media.agent4.ai/ZmUyNjljNTQtNzlkNS0xMWVlLWE3YTgtMGE1OGE5ZmVhYzAy/connect");
     socketRef.current.binaryType = "arraybuffer";
 
@@ -35,6 +39,7 @@ const Index = () => {
     socketRef.current.onclose = () => {
       setStatus("Disconnected");
       setIsRecording(false);
+      setTimeout(handleConnect, 5000);
     };
 
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -72,6 +77,15 @@ const Index = () => {
       setIsRecording(false);
     }
   };
+
+  useEffect(() => {
+    handleConnect();
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+    };
+  }, []);
 
   return (
     <Container centerContent maxW="container.md" height="100vh" display="flex" flexDirection="column" justifyContent="center" alignItems="center">
